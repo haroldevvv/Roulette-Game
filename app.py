@@ -47,7 +47,7 @@ def simulate_roulette(n_rounds, bet_amount, wheel, probabilities, player_choice,
 # -----------------------------------------------
 st.title("🎰 Fully Interactive Roulette Simulator (Fair vs Tweaked)")
 
-st.image("https://www.freepik.com/premium-vector/traditional-european-roulette-wheel-with-single-zero_237485099.htm", caption="Roulette Wheel", width=350)
+st.image("static/euro-roulette-wheel.webp", caption="Roulette Wheel", width=350)
 
 st.write("Compare **Fair** and **Tweaked** wheel behavior with balance tracking and visual analysis.")
 
