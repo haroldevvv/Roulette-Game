@@ -122,8 +122,8 @@ if st.session_state.fair_df is not None and st.session_state.tweaked_df is not N
     fair_final = st.session_state.fair_df['Balance'].iloc[-1]
     tweaked_final = st.session_state.tweaked_df['Balance'].iloc[-1]
 
-    st.write(f"**Fair Final Balance:** {fair_final:,}")
-    st.write(f"**Tweaked Final Balance:** {tweaked_final:,}")
+    st.write(f"**Fair Game Final Balance (Pesos):** {fair_final:,}")
+    st.write(f"**Tweaked Game Final Balance (Pesos):** {tweaked_final:,}")
     st.write(f"**Difference:** {tweaked_final - fair_final:,}")
 
     st.info("The tweaked game slightly favors the house due to the increased GREEN probability and slightly reduced payout.")
