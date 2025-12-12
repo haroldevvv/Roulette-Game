@@ -32,11 +32,13 @@ def simulate_roulette_number(n_rounds, bet_amount, probabilities, player_choices
     balance = starting_balance
 
     for r in results:
+        total_bet = bet_amount * len(player_choices)  # total bet for this round
         if r in player_choices:
-            win = bet_amount * (34.8 if tweaked else 35)  # Adjusted payout for tweaked game
+            win = bet_amount * (34.8 if tweaked else 35)  # payout only for the winning number
+            net_gain = win - total_bet  # net balance change
         else:
-            win = -bet_amount
-        balance += win
+            net_gain = -total_bet  # lose all bets
+        balance += net_gain
         balances.append(balance)
 
     df = pd.DataFrame({
@@ -56,7 +58,7 @@ player_choices = st.multiselect(
 )
 
 n_rounds = st.slider("Number of simulated rounds", 1000, 50000, 10000)
-bet_amount = st.number_input("Bet amount per round", 1, 10000, 100)
+bet_amount = st.number_input("Bet amount per number per round", 1, 10000, 100)
 starting_balance = st.number_input("Starting Balance", 100, 1_000_000, 1000)
 
 st.markdown("---")
