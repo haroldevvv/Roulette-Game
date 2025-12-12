@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # -----------------------------------------------
-# Enhanced Roulette Simulation Using Board
+# Roulette Simulator Using Board (Fair vs Tweaked)
 # -----------------------------------------------
 
 # Define the roulette board numbers and colors
@@ -18,11 +18,21 @@ roulette_board = {
     31: 'BLACK', 32: 'RED', 33: 'BLACK', 34: 'RED', 35: 'BLACK', 36: 'RED'
 }
 
-# Simulation function for number betting
-def simulate_roulette_number(n_rounds, bet_amount, board, player_choice, starting_balance):
-    numbers = list(board.keys())
-    probabilities = [1/37] * 37  # Fair probabilities
+# Probabilities
+fair_prob = [1/37] * 37
 
+# Tweaked: increase GREEN slightly to 6.4% and normalize remaining numbers
+tweaked_prob = [0.026] * 37
+tweaked_prob[0] = 0.064
+tweaked_prob = np.array(tweaked_prob)
+tweaked_prob /= tweaked_prob.sum()  # Ensure sum = 1
+
+# -----------------------------------------------
+# Simulation functions
+# -----------------------------------------------
+
+def simulate_roulette_number(n_rounds, bet_amount, probabilities, player_choice, starting_balance, tweaked=False):
+    numbers = list(roulette_board.keys())
     results = np.random.choice(numbers, size=n_rounds, p=probabilities)
 
     balances = []
@@ -30,7 +40,10 @@ def simulate_roulette_number(n_rounds, bet_amount, board, player_choice, startin
 
     for r in results:
         if r == player_choice:
-            win = bet_amount * 35  # Straight number payout
+            if tweaked:
+                win = bet_amount * 34.8  # Slightly reduced payout for house edge
+            else:
+                win = bet_amount * 35  # Standard payout
         else:
             win = -bet_amount
         balance += win
@@ -38,7 +51,7 @@ def simulate_roulette_number(n_rounds, bet_amount, board, player_choice, startin
 
     df = pd.DataFrame({
         'Result': results,
-        'Color': [board[r] for r in results],
+        'Color': [roulette_board[r] for r in results],
         'Balance': balances
     })
     return df
@@ -46,9 +59,7 @@ def simulate_roulette_number(n_rounds, bet_amount, board, player_choice, startin
 # -----------------------------------------------
 # Streamlit UI
 # -----------------------------------------------
-st.title("🎰 Roulette Simulator Using Board")
-
-# st.image("/mnt/data/2384464d-658d-4d1f-8d29-4b077cf29ae6.png", caption="Roulette Board", width=700)
+st.title("🎰 Roulette Simulator Using Board (Fair vs Tweaked)")
 
 # User selections
 player_choice = st.number_input("Choose a number to bet on (0-36):", min_value=0, max_value=36, value=17)
@@ -58,26 +69,77 @@ starting_balance = st.number_input("Starting Balance", 100, 1_000_000, 1000)
 
 st.markdown("---")
 
-# Buttons
-run_simulation = st.button("Run Simulation 🎯")
+# Buttons for Fair and Tweaked Game
+a, b = st.columns(2)
+run_fair = a.button("Run FAIR Game")
+run_tweaked = b.button("Run TWEAKED Game")
 
-if run_simulation:
-    st.subheader("🎲 Simulation Results")
-    df = simulate_roulette_number(n_rounds, bet_amount, roulette_board, player_choice, starting_balance)
+# Containers to store results
+if "fair_df" not in st.session_state:
+    st.session_state.fair_df = None
+if "tweaked_df" not in st.session_state:
+    st.session_state.tweaked_df = None
 
-    final_balance = df['Balance'].iloc[-1]
-    st.metric("Final Balance", f"{final_balance:,}")
+# -----------------------------------------------
+# FAIR GAME
+# -----------------------------------------------
+if run_fair:
+    st.subheader("FAIR Game Results")
+    fair_df = simulate_roulette_number(n_rounds, bet_amount, fair_prob, player_choice, starting_balance)
+    st.session_state.fair_df = fair_df
 
-    st.subheader("Outcome Distribution")
+    st.metric("Final Balance (FAIR)", f"{fair_df['Balance'].iloc[-1]:,}")
+
+    st.subheader("Outcome Distribution — FAIR")
     fig1, ax1 = plt.subplots()
-    ax1.hist(df['Result'], bins=np.arange(-0.5,37,1), edgecolor='black')
+    ax1.hist(fair_df['Result'], bins=np.arange(-0.5,37,1), edgecolor='black')
     ax1.set_xlabel("Number")
     ax1.set_ylabel("Frequency")
     st.pyplot(fig1)
 
-    st.subheader("Balance Over Time")
+    st.subheader("Balance Over Time — FAIR")
     fig2, ax2 = plt.subplots()
-    ax2.plot(df['Balance'])
+    ax2.plot(fair_df['Balance'])
     ax2.set_xlabel("Rounds")
     ax2.set_ylabel("Balance")
     st.pyplot(fig2)
+
+# -----------------------------------------------
+# TWEAKED GAME
+# -----------------------------------------------
+if run_tweaked:
+    st.subheader("TWEAKED Game Results")
+    tweaked_df = simulate_roulette_number(n_rounds, bet_amount, tweaked_prob, player_choice, starting_balance, tweaked=True)
+    st.session_state.tweaked_df = tweaked_df
+
+    st.metric("Final Balance (TWEAKED)", f"{tweaked_df['Balance'].iloc[-1]:,}")
+
+    st.subheader("Outcome Distribution — TWEAKED")
+    fig3, ax3 = plt.subplots()
+    ax3.hist(tweaked_df['Result'], bins=np.arange(-0.5,37,1), edgecolor='black')
+    ax3.set_xlabel("Number")
+    ax3.set_ylabel("Frequency")
+    st.pyplot(fig3)
+
+    st.subheader("Balance Over Time — TWEAKED")
+    fig4, ax4 = plt.subplots()
+    ax4.plot(tweaked_df['Balance'])
+    ax4.set_xlabel("Rounds")
+    ax4.set_ylabel("Balance")
+    st.pyplot(fig4)
+
+# -----------------------------------------------
+# SUMMARY
+# -----------------------------------------------
+if st.session_state.fair_df is not None and st.session_state.tweaked_df is not None:
+    st.markdown("---")
+    st.subheader("Comparison Summary")
+
+    fair_final = st.session_state.fair_df['Balance'].iloc[-1]
+    tweaked_final = st.session_state.tweaked_df['Balance'].iloc[-1]
+
+    st.write(f"**Fair Final Balance:** {fair_final:,}")
+    st.write(f"**Tweaked Final Balance:** {tweaked_final:,}")
+    st.write(f"**Difference:** {tweaked_final - fair_final:,}")
+
+    st.info("The tweaked game slightly favors the house due to the increased GREEN probability and slightly reduced payout.")
